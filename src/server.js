@@ -1,12 +1,14 @@
 require('dotenv').config();
 const express = require("express");
 const app = express();
-const PORT = process.env.PORT || 3000;
+const bodyParser = require("body-parser");
+const PORT = process.env.PORT || 8000;
 const db = require("../src/db/conn");
 const Table = require("../src/models/form.model");
+const nodemailer = require("nodemailer");
 
 const cors = require("cors");
-
+app.use(bodyParser.json());
 // Middleware for cors and adding options for cors
 const corsOptions = {
   origin: "http://localhost:5173",
@@ -83,6 +85,41 @@ app.delete("/api/form/:id", async (req, res) => {
   }
 });
 
+
+
+
+
+app.post('/send-email', async (req, res) => {
+  const { to, subject, body } = req.body;
+
+  try {
+    // Create a Nodemailer transporter using SMTP transport
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_ID, 
+        pass: process.env.EMAIL_PASS, 
+      },
+    });
+
+    // Email message options
+    const mailOptions = {
+      from: process.env.EMAIL_ID,
+      to,
+      subject,
+      text: body,
+    };
+
+    // Send the email
+    await transporter.sendMail(mailOptions);
+
+    console.log('Email sent successfully');
+    res.status(200).send('Email sent successfully');
+  } catch (error) {
+    console.error('Error sending email:', error.message);
+    res.status(500).send('Error sending email');
+  }
+});
 app.listen(PORT, () => {
   console.log("Server is running on Port", PORT);
 });
